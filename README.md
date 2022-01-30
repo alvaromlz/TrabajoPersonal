@@ -3,8 +3,11 @@
 Trabajo Personal de **Álvaro Martín Lozano**
 
 Asignatura: Bioinformática
+
 Máster en I+D+i de Medicamentos (XXXII promoción)
+
 Universidad de Navarra
+
 
 
 ### **Analizando dataset nycflights13::flights**
