@@ -9,5 +9,371 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-### **Analizando dataset mycflights13::flights**
+# **Analizando dataset nycflights13::flights**
+
+Primero cargo los paquetes necesarios ("tidyverse" y "nycflights13"), previamente instalados.
+A continuación, creo 5 datasets con los datos del paquete "nycflights".
+```{r}
+library(tidyverse)
+library(lubridate)
+library(nycflights13)
+aerolineas <- nycflights13::airlines
+aeropuertos <- nycflights13::airports
+vuelos <- nycflights13::flights
+aviones <- nycflights13::planes
+clima <- nycflights13::weather
+```
+
+
+### **EJ 1**: Vuelos que llegaron más de 1 hora tarde de lo previsto
+```{r}
+vuelos_retrasados <- filter(vuelos, arr_delay>60)
+vuelos_retrasados
+dim(vuelos_retrasados)
+```
+Un total de 27789 vuelos llegaron a destino con más de 1 hora de retraso. En la data frame creada ("vuelos_retrasados") pueden verse cuáles son.
+
+
+### **EJ 2**: Vuelos que volaron hacia San Francisco (aeropuertos SFO y OAK)
+```{r}
+vuelos_sf <- filter(vuelos, dest == "SFO" | dest == "OAK")
+vuelos_sf
+dim(vuelos_sf)
+dim(vuelos_sf[vuelos_sf$dest=="SFO",])
+dim(vuelos_sf[vuelos_sf$dest=="OAK",])
+```
+Un total de 13643 vuelos volaron hacia San Francisco, siendo de ellos:
+
+- 13331 vuelos al aeropuerto SFO.
+- 312 vuelos al aeropuerto OAK.
+
+
+### **EJ 3**: Vuelos operados por United American (UA) o por American Airlines (AA)
+```{r}
+vuelos_american <- filter(vuelos, carrier == "UA" | carrier == "AA")
+vuelos_american
+dim(vuelos_american)
+dim(vuelos_american[vuelos_american$carrier=="UA",])
+dim(vuelos_american[vuelos_american$carrier=="AA",])
+```
+Un total de 91394 vuelos volaron con alguna de estas dos aerolíneas:
+
+- 58665 vuelos operados por United American (UA).
+- 32729 vuelos operados por American Airlines (AA).
+
+
+### **EJ 4**: Vuelos que volaron en primavera (Abril, Mayo y Junio)
+```{r}
+vuelos_primavera <- filter(vuelos, month == 4 | month == 5 | month == 6)
+vuelos_primavera
+dim(vuelos_primavera)
+dim(vuelos_primavera[vuelos_primavera$month==4,])
+dim(vuelos_primavera[vuelos_primavera$month==5,])
+dim(vuelos_primavera[vuelos_primavera$month==6,])
+```
+Un total de 85369 vuelos volaron en los meses de primavera:
+
+- 28330 vuelos en Abril.
+- 28796 vuelos en Mayo.
+- 28243 vuelos en Junio
+
+
+### **EJ 5**: Vuelos que llegaron más de 1 hora tarde, pero salieron con menos de 1 hora de retraso
+```{r}
+vuelos_retra2 <- filter(vuelos, arr_delay>60 & dep_delay<60)
+vuelos_retra2
+dim(vuelos_retra2)
+```
+Un total de 4956 vuelos cumplieron esta condición.
+
+
+### **EJ 6**: Vuelos que salieron con más de 1 hora de retraso, pero llegaron con menos de media hora de retraso
+```{r}
+vuelos_retra3 <- filter(vuelos, dep_delay>60 & arr_delay<30)
+vuelos_retra3
+dim(vuelos_retra3)
+```
+Un total de 181 vuelos aceleraron en el aire, cumpliendo esta condición.
+
+
+### **EJ 7**: Vuelos nocturnos
+```{r}
+vuelos_nocturnos <- filter(vuelos, hour<=7)
+vuelos_nocturnos
+dim(vuelos_nocturnos)
+```
+Hubo un total de 50726 vuelos nocturnos (operados entre la medianoche y las 7am).
+
+
+### **EJ 8**: Vuelos con hora de salida desconocida
+```{r}
+vuelos_desconocidos <- filter(vuelos, is.na(dep_time))
+vuelos_desconocidos
+dim(vuelos_desconocidos)
+```
+Un total de 8255 vuelos tienen un valor desconocido de "dep_time", lo que puede indicar probablemente que fueron vuelos cancelados (no llegaron a salir).
+
+
+### **EJ 9**: Variables que contienen datos desconocidos
+```{r}
+apply(is.na(vuelos),2,sum)
+```
+Las variables (columnas) que contienen valores desconocidos son:
+
+- dep_time
+- dep_delay
+- arr_time
+- arr_delay
+- tailnum
+- air_time
+
+
+### **EJ 10**: Vuelos más y menos retrasados en la salida
+Los vuelos más retrasados a la hora de salida (mayor "dep_delay"), ordenados de mayor a menor, fueron:
+```{r}
+arrange(vuelos, desc(dep_delay))
+```
+
+Los vuelos más adelantados a la hora de salida ("dep_delay" negativo) fueron:
+```{r}
+arrange(vuelos, dep_delay)
+```
+
+
+### **EJ 11**: Vuelos más rápidos
+Creo una nueva columna llamada "velocidad", donde calculo el valor de la velocidad de cada avión, entendida como el cociente entre la distancia recorrida entre los aeropuertos (en millas) y el tiempo (en horas) necesario para recorrer dicha distancia.
+Finalmente, se muestran ordenados los aviones más rápidos.
+```{r}
+vuelos$velocidad <- vuelos$distance/(vuelos$air_time/60) #(millas/hora)
+arrange(vuelos, desc(velocidad))
+```
+
+
+### **EJ 12**: Vuelos con trayectos más largos
+Los vuelos con trayectos (entre aeropuertos de origen y destino) más largos (en millas) fueron:
+```{r}
+arrange(vuelos, desc(distance))
+```
+
+
+
+### **EJ 13**: Vuelos con trayectos más cortos
+Los vuelos con trayectos más cortos (en millas) fueron:
+```{r}
+arrange(vuelos, distance)
+```
+
+
+### **EJ 14**: Convertir el dato de "dep_time" en minutos transcurridos desde medianoche
+El operador **%/%** devuelve el cociente de una división (sin el resto). Puede servir para obtener las horas enteras del dato de dep_time.
+El operador **%%** devuelve el resto de una división. Puede servir para obtener los minutos (sin horas) de dep_time.
+Así, podemos crear una nueva variable (columna) que nos devuelva este tiempo total transcurrido en minutos:
+```{r}
+vuelos$dep_time_min <- ((vuelos$dep_time %/% 100)*60) + (vuelos$dep_time %% 100)
+vuelos$sched_dep_time_min <- ((vuelos$sched_dep_time %/% 100)*60) + (vuelos$sched_dep_time %% 100)
+```
+Del mismo modo, otra forma es emplear la función "mutate", que se encarga de crear nuevas variables según las indiciaciones:
+```{r}
+mutate(vuelos,
+          dep_time,
+          hour_dep = dep_time %/% 100,
+          minute_dep = dep_time %% 100,
+          dep_time_min = ((vuelos$dep_time %/% 100)*60) + (vuelos$dep_time %% 100),
+          sched_dep_time,
+          sched_dep_time_min = ((vuelos$sched_dep_time %/% 100)*60) + (vuelos$sched_dep_time %% 100))
+```
+
+
+### **EJ 15**: Relación entre las variables "dep_delay", "dep_time" y "sched_dep_time"
+Al encontrarse ambas variables (dep_time y sched_dep_time) en formato 00:00h, la variable resultante dep_delay también deberá estar en este formato. El cálculo se hace mediante la siguiente diferencia:
+**dep_delay = dep_time - sched_dep_time**.
+
+Esto explicaría por qué los vuelos adelantados a la hora de salida tienen un valor de dep_delay < 0
+
+Para comprobar que realmente es así, y partiendo de la estrategia del ejercicio anterior, podemos calcular nosotros mismos esta diferencia de tiempo en minutos (a partir de las variables "dep_time_min" y "sched_dep_time_min" que habíamos creado antes), y compararla con la variable real "dep_delay":
+```{r}
+vuelos$dep_delay_min <- vuelos$dep_time_min - vuelos$sched_dep_time_min
+vuelos$dif_dep_delay <- vuelos$dep_delay - vuelos$dep_delay_min
+table(vuelos$dif_dep_delay)
+```
+Al hacer un table de la nueva variable diferencia ("dif_dep_delay"), vemos que la gran mayoría de los valores son 0, lo que significa que nuestros valores y los de la variable real coinciden y son correctos. No obstante, encontramos hasta 1207 valores de "dep_delay" con un registro de 1440 minutos de más que los calculados con nuestra diferencia. Si nos fijamos, estos 1440min coinciden con 24h, lo que indica un posible desajuste de los datos al retrasarse un vuelo sobrepasando la medianoche, y sumando 24horas más de diferencia que son irreales. Por tanto, deberíamos rectificar estos datos de "dep_delay" restándole 1440min.
+
+
+### **EJ 16**: Patrón del número de vuelos que se cancelan cada día
+Creo un nuevo data frame que agrupe los vuelos por días, y para cada día calculo el número total de vuelos y el número de vuelos que fueron cancelados (los que no tienen valores (NA) asignados al retraso de salida y llegada, porque no llegaron a volar):
+```{r}
+vuelos_cancel_dia <-  vuelos %>%
+  mutate(vuelos_cancel = (is.na(arr_delay) | is.na(arr_delay))) %>%
+  group_by(year, month, day) %>%
+  summarise(cancelados = sum(vuelos_cancel), totales = n(),)
+vuelos_cancel_dia
+```
+Representando estos datos podemos observar que, **a mayor número de vuelos operados al día, mayor era el número de vuelos que resultaban cancelados**.
+```{r}
+ggplot(data=vuelos_cancel_dia) +
+  geom_point(mapping=aes(x=totales, y=cancelados), color="red")
+```
+
+
+### **EJ 17**: Relación entre la proporción de vuelos cancelados y el retraso promedio, por día
+Primero creamos un nuevo data frame que, agrupando los vuelos por día, incluya los valores de retraso medio y la proporción de los vuelos cancelados cada día.
+```{r}
+cancel_retraso_dia <- vuelos %>%
+  mutate(cancelados = (is.na(tailnum))) %>%
+  group_by(year, month, day) %>%
+  summarise(ratio_cancelados = mean(cancelados),
+            media_dep_delay = mean(dep_delay, na.rm = TRUE)) %>% 
+  ungroup()
+cancel_retraso_dia
+```
+Representando la proporción de vuelos cancelados frente a la media de retrasos al día, se puede observar una tendencia a un **mayor número de cancelaciones conforme aumenta el retraso**, destacando un gran pico de cancelaciones a valores de media de retrasos a partir de media_dep_delay =~ 15
+```{r}
+ggplot(data=cancel_retraso_dia) +
+  geom_line(aes(x=media_dep_delay, y=ratio_cancelados, col=ratio_cancelados))
+```
+
+
+### **EJ 18**: Relación entre la proporción de vuelos cancelados y el retraso promedio, por aeropuerto
+Procedemos igual que en el ejemplo anterior, con la diferencia de que esta vez filtraremos la nueva data frame según los aeropuertos de origen y destino de los vuelos.
+```{r}
+cancel_retraso_aerop <- vuelos %>%
+  mutate(cancelados = (is.na(tailnum))) %>%
+  group_by(origin, dest) %>%
+  summarise(ratio_cancelados = mean(cancelados),
+            media_dep_delay = mean(dep_delay, na.rm = TRUE)) %>% 
+  ungroup()
+cancel_retraso_aerop
+```
+Representando esta proporción de vuelos cancelados frente a la media de retrasos en función de los aeropuertos de origen y destino, **no observamos ninguna relación significativa** entre ambas variables, tendiendo a pensar que los aeropuertos no influyen "a priori" en los retrasos y cancelaciones.
+```{r}
+ggplot(data=cancel_retraso_aerop) +
+  geom_line(aes(x=media_dep_delay, y=ratio_cancelados, col=ratio_cancelados))
+
+```
+
+
+### **EJ 19**: Compañía aérea que sufre los mayores retrasos
+Creo un data frame que, agrupado por aerolíneas, muestre el valor medio de retraso tanto a la salida ("dep_delay") como a la llegada ("arr_delay") de los vuelos:
+```{r}
+by_carrier <- group_by(vuelos, carrier)
+retrasos <- summarise(by_carrier,
+                      dep_delay = mean(dep_delay, na.rm = TRUE),
+                      arr_delay = mean(arr_delay, na.rm = TRUE))
+```
+Retrasos a la salida de los vuelos, ordenados de mayor a menor:
+```{r}
+arrange(retrasos, desc(dep_delay))
+```
+Retrasos a la llegada de los vuelos, ordenados de mayor a menor:
+```{r}
+arrange(retrasos, desc(arr_delay))
+```
+Como podemos ver en ambos casos, la compañía **F9 (Frontier Airlines Inc.)** es la que sufre mayores retrasos, tanto a las salidas como, por consecuecia, a las llegadas de los vuelos.
+
+
+### **EJ 20**: Horarios con menos retrasos en la salida del vuelo
+Siguiendo la estrategia del ejercicio anterior, pero esta vez agrupando por horas de salida del vuelo (variable "hour"):
+```{r}
+by_hour <- group_by(vuelos, hour)
+retrasos_hora <- summarise(by_hour,
+                           dep_delay = mean(dep_delay, na.rm = TRUE))
+arrange(retrasos_hora, dep_delay)
+```
+Vemos que las **primeras horas del día** (los vuelos de las 5am sobre todo) son las que nos aseguran una tasa de retraso menor, en comparación con otras franjas horarias.
+
+
+### **EJ 21**: Mejor día de la semana para volar evitando los retrasos
+Primero creo una función para calcular el día de la semana que se corresponde con la fecha exacta de cada vuelo, aprovechando la función "make_daytime()" de la librería "lubritade".
+```{r}
+make_dtime <- function(year, month, day, time)
+{
+  make_datetime(year, month, day, time %/% 100, time %% 100)
+}
+```
+Transformo los datos hora de salida y llegada (y retrasos) de los vuelos en fecha y hora, gracias a esta función creada, y guardo esta información en un data frame ("vuelos_dt"). A continuación, devuelvo los valores de retrasos a la salida y llegada de cada uno:
+```{r}
+vuelos_dt <- vuelos %>% 
+  filter(!is.na(dep_time), !is.na(arr_time)) %>% 
+  mutate(
+    dep_time = make_dtime(year, month, day, dep_time),
+    arr_time = make_dtime(year, month, day, arr_time),
+    sched_dep_time = make_dtime(year, month, day, sched_dep_time),
+    sched_arr_time = make_dtime(year, month, day, sched_arr_time)
+  ) %>% 
+  select(origin, dest, ends_with("delay"), ends_with("time"))
+vuelos_dt %>%
+  mutate(dow = wday(sched_dep_time)) %>%
+  group_by(dow) %>%
+  summarise(
+    dep_delay = mean(dep_delay),
+    arr_delay = mean(arr_delay, na.rm = TRUE)
+  ) %>%
+  print(n = Inf)
+```
+Finalmente, represento el promedio de retrasos en las salidas de los vuelos para cada día de la semana:
+```{r}
+vuelos_dt %>%
+  mutate(wday = wday(dep_time, label = TRUE)) %>% 
+  group_by(wday) %>% 
+  summarize(ave_dep_delay = mean(dep_delay, na.rm = TRUE)) %>% 
+  ggplot(aes(x = wday, y = ave_dep_delay)) + 
+  geom_bar(stat = "identity", fill = "dark blue")
+```
+
+Visualizando la gráfica, encontramos más conveniente coger un vuelo los **sábados** para evitar los retrasos en las salidas. Por el contrario, vemos que los jueves, viernes y lunes son los días en los que más retrasos se producen.
+
+
+### **EJ 22**: Total de minutos de retraso para cada destino
+Primero convierto los valores de hora de retraso en al llegada ("arr_delay", que está en formato 00:00h) en minutos totales ("arr_delay_min").
+```{r}
+vuelos$arr_delay_min <- ((vuelos$arr_delay %/% 100)*60) + (vuelos$arr_delay %% 100)
+```
+Ahora puedo crear un data frame, agrupando por destinos, y calculo el total de minutos de retraso en la llegada para cada aeropuerto de destino:
+```{r}
+by_destino <- group_by(vuelos, dest)
+retraso_destino <- summarise(by_destino,
+                             arr_delay = sum(arr_delay_min, na.rm = TRUE))
+retraso_destino
+```
+
+
+### **EJ 23**: Proporción del total de retraso para cada destino
+Dentro de cada aeropuerto de destino, conociendo anteriormente el total de minutos de retraso acumulado por dicho aeropuerto, calculo el ratio de retraso para cada vuelo que llegó retrasado a dicho aeropuerto:
+```{r}
+vuelos %>%
+  filter(arr_delay > 0) %>%
+  group_by(dest, origin, carrier, flight) %>%
+  summarise(arr_delay = sum(arr_delay)) %>%
+  group_by(dest) %>%
+  mutate(
+    arr_delay_prop = arr_delay / sum(arr_delay)
+  ) %>%
+  arrange(dest, desc(arr_delay_prop)) %>%
+  select(carrier, flight, origin, dest, arr_delay_prop) 
+```
+
+
+### **EJ 24**: ¿Qué se deduce acerca de los retrasos según la hora del día a la que está programada el vuelo de salida?
+Para interpretarlo, represento la hora de salida con retraso frente a las horas de salida programadas para cada vuelo, partiendo del data frame "vuelos_dt" previamente creado (Ejercicio 21):
+```{r}
+vuelos_dt %>%
+  mutate(sched_dep_hour = hour(sched_dep_time)) %>%
+  group_by(sched_dep_hour) %>%
+  summarise(dep_delay = mean(dep_delay)) %>%
+  ggplot(aes(y = dep_delay, x = sched_dep_hour)) +
+  geom_point() +
+  geom_smooth()
+```
+
+Claramente la gráfica nos muestra cómo el mayor pico de retrasos se acumulan en los vuelos que tienen una hora de salida programada **por la tarde (con un pico máximo alrededor de las 7pm)**, quizá por la mayor afluencia de vuelos y pasajeros a esas horas en el aeropuerto.
+
+
+### **EJ 25**: URL de GitHub
+Pinchar [aquí](https://github.com/alvaromlz/TrabajoPersonal.git) para ir al proyecto online compartido de GitHub ("TrabajoPersonal" - Álvaro Martín Lozano)
+
+
+### **EJ 26**: Información de la sesión
+```{r}
+sessionInfo()
+```
 
