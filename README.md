@@ -1,2 +1,2 @@
 # TrabajoPersonal
-Trabajo Personal de Álvaro Martín para Bioinformática (MIDI)
+Trabajo Personal de Álvaro Martín Lozano para Bioinformática (MIDI)
