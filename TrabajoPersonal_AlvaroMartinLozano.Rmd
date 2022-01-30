@@ -1,0 +1,13 @@
+---
+title: "TrabajoPersonal_AlvaroMartin"
+author: "Álvaro Martín Lozano"
+date: "1/28/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### **Analizando dataset mycflights13::flights**
+
